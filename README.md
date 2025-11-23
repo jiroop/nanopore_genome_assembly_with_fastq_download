@@ -53,41 +53,25 @@ Nextflow will automatically create conda environments for each process. No manua
 
 ## Quick Start
 
-### 1. Create an Assembly Directory
-```bash
-mkdir -p assemblies/my_assembly
-```
+### 1. Edit Pipeline Parameters
 
-### 2. Create a Configuration File
-
-Create `assemblies/my_assembly/config.csv` with your SRA accession:
-```csv
-parameter,value
-reads_path,./data/reads.fastq.gz
-subsample,50000
-genome_size,12m
-```
-
-**Parameters**:
-- `reads_path`: Relative path where downloaded reads will be stored (keep as `./data/reads.fastq.gz`)
-- `subsample`: Number of reads to subsample for faster assembly (0 = use all reads)
-- `genome_size`: Approximate genome size (e.g., 8m for 8 megabases, 12m for yeast, 100m for larger genomes)
-
-### 3. Modify the Pipeline for Your SRA Accession
-
-Edit `pipeline.nf` and change the default SRA accession:
+Open `pipeline.nf` and edit the parameters section at the top:
 ```nextflow
-params.sra_accession = 'SRR21031641'  // Change this to your SRA accession
+params.sra_accession = 'SRR21031641'  // Your SRA accession
+params.outdir = 'results'
+params.genome_size = '12m'            // Approximate genome size
+params.subsample = 100000             // Number of reads to subsample (0 = use all)
 ```
 
-Or override it on the command line:
-```bash
-nextflow run pipeline.nf --assembly_dir ./assemblies/my_assembly --sra_accession SRR12345678 -profile mac
-```
+**Parameter descriptions**:
+- `sra_accession`: NCBI SRA accession number (e.g., SRR21031641)
+- `genome_size`: Approximate genome size (e.g., 8m for 8 megabases, 12m for yeast, 100m for larger genomes)
+- `subsample`: Number of reads to subsample for faster assembly (0 = use all reads)
+- `outdir`: Output directory for results
 
-### 4. Run the Pipeline
+### 2. Run the Pipeline
 ```bash
-nextflow run pipeline.nf --assembly_dir ./assemblies/my_assembly -profile mac
+nextflow run pipeline.nf -profile mac
 ```
 
 Replace `mac` with your appropriate profile:
@@ -102,11 +86,11 @@ The pipeline will:
 4. Assemble the genome
 5. Polish the assembly
 6. Annotate genes
-7. Organize all results
+7. Organize all results in `results/final_results/`
 
-### 5. View Results
+### 3. View Results
 
-Results will be in `assemblies/my_assembly/results/final_results/`:
+Results will be in `results/final_results/`:
 ```
 final_results/
 ├── assembly/
@@ -123,30 +107,45 @@ final_results/
 └── annotation_evidence/                 # Diamond annotation results
 ```
 
-## Detailed Configuration Examples
+## Overriding Parameters on Command Line
 
-### Small Test Assembly (Fast)
-```csv
-parameter,value
-reads_path,./data/reads.fastq.gz
-subsample,10000
-genome_size,12m
+Instead of editing the script, you can override parameters on the command line:
+```bash
+# Use a different SRA accession
+nextflow run pipeline.nf --sra_accession SRR12345678 -profile mac
+
+# Subsample to 50,000 reads for faster testing
+nextflow run pipeline.nf --sra_accession SRR12345678 --subsample 50000 -profile mac
+
+# Use all reads (no subsampling)
+nextflow run pipeline.nf --sra_accession SRR12345678 --subsample 0 -profile mac
+
+# Specify genome size
+nextflow run pipeline.nf --sra_accession SRR12345678 --genome_size 100m -profile mac
 ```
 
-### Full Assembly (Slow but Comprehensive)
-```csv
-parameter,value
-reads_path,./data/reads.fastq.gz
-subsample,0
-genome_size,12m
+## Example Parameter Configurations
+
+### Small Test Assembly (Fast)
+Edit `pipeline.nf`:
+```nextflow
+params.sra_accession = 'SRR21031641'
+params.genome_size = '12m'
+params.subsample = 10000
+```
+
+### Full Assembly (Comprehensive)
+```nextflow
+params.sra_accession = 'SRR21031641'
+params.genome_size = '12m'
+params.subsample = 0  // Use all reads
 ```
 
 ### Large Genome
-```csv
-parameter,value
-reads_path,./data/reads.fastq.gz
-subsample,100000
-genome_size,100m
+```nextflow
+params.sra_accession = 'SRR12345678'
+params.genome_size = '100m'
+params.subsample = 100000
 ```
 
 ## Finding Your SRA Accession
@@ -154,7 +153,7 @@ genome_size,100m
 1. Go to [NCBI SRA](https://www.ncbi.nlm.nih.gov/sra)
 2. Search for your organism or project
 3. Find your run accession (starts with SRR, ERR, or DRR)
-4. Use that accession in your pipeline configuration
+4. Use that accession in your pipeline
 
 Example: `SRR21031641` is a baker's yeast (Saccharomyces cerevisiae) Nanopore assembly
 
@@ -191,39 +190,41 @@ COLLECT_FINAL_RESULTS (organize outputs)
 
 ## Running Multiple Assemblies
 
-You can run multiple SRA accessions in sequence:
+### Sequential Runs
+
+For different SRA accessions, simply run the pipeline multiple times with different parameters:
 ```bash
-for accession in SRR21031641 SRR12345678 SRR87654321; do
-    mkdir -p assemblies/assembly_$accession
-    echo "parameter,value
-reads_path,./data/reads.fastq.gz
-subsample,50000
-genome_size,12m" > assemblies/assembly_$accession/config.csv
-    
-    nextflow run pipeline.nf \
-        --assembly_dir ./assemblies/assembly_$accession \
-        --sra_accession $accession \
-        -profile mac -resume
-done
+# First assembly
+nextflow run pipeline.nf --sra_accession SRR21031641 --subsample 50000 -profile mac
+
+# Second assembly (with -resume to avoid re-downloading shared resources)
+nextflow run pipeline.nf --sra_accession SRR12345678 --subsample 50000 -profile mac -resume
+
+# Third assembly
+nextflow run pipeline.nf --sra_accession SRR87654321 --subsample 50000 -profile mac -resume
 ```
 
-Or resume a failed assembly:
+Each run will overwrite the previous results in `results/`, so save important results before starting a new run.
+
+### Resuming a Failed Assembly
+
+If your pipeline fails or is interrupted, resume from where it left off:
 ```bash
-nextflow run pipeline.nf --assembly_dir ./assemblies/my_assembly -profile mac -resume
+nextflow run pipeline.nf -profile mac -resume
 ```
 
 ## Using Results in IGV
 
 1. Open **IGV** (Integrative Genomics Viewer)
-2. Load genome: `assemblies/my_assembly/results/final_results/assembly/polished_assembly.fasta`
-3. Load annotations: `assemblies/my_assembly/results/final_results/annotations/genes.gff3`
-4. Load coverage: `assemblies/my_assembly/results/final_results/coverage/overlaps.sorted.bam`
+2. Load genome: `results/final_results/assembly/polished_assembly.fasta`
+3. Load annotations: `results/final_results/annotations/genes.gff3`
+4. Load coverage: `results/final_results/coverage/overlaps.sorted.bam`
 
 ## Customization
 
 ### Modifying Assembly Parameters
 
-Edit `nextflow.config` to change default parameters:
+Edit `nextflow.config` or `pipeline.nf` to change default parameters:
 ```nextflow
 params {
     genome_size = '12m'
@@ -258,20 +259,20 @@ Large Nanopore datasets (10GB+) may take several hours to download from SRA. Use
 
 Reduce the number of subsampled reads:
 ```bash
-nextflow run pipeline.nf --assembly_dir ./assemblies/my_assembly --subsample 10000 -profile mac
+nextflow run pipeline.nf --subsample 10000 -profile mac
 ```
 
 ### Resume failed pipeline
 
 Use the `-resume` flag to continue from where it stopped:
 ```bash
-nextflow run pipeline.nf --assembly_dir ./assemblies/my_assembly -profile mac -resume
+nextflow run pipeline.nf -profile mac -resume
 ```
 
 ### Clear cache and restart
 ```bash
 rm -rf work/
-nextflow run pipeline.nf --assembly_dir ./assemblies/my_assembly -profile mac
+nextflow run pipeline.nf -profile mac
 ```
 
 ## Output Files Guide
