@@ -55,12 +55,12 @@ Nextflow will automatically create conda environments for each process. No manua
 
 ### 1. Edit Pipeline Parameters
 
-Open `pipeline.nf` and edit the parameters section at the top:
+Open `pipeline.nf` and edit these parameters at the top:
 ```nextflow
-params.sra_accession = 'SRR21031641'  // Your SRA accession
+params.sra_accession = 'SRR21031641'  // Change to your SRA accession
 params.outdir = 'results'
-params.genome_size = '12m'            // Approximate genome size
-params.subsample = 100000             // Number of reads to subsample (0 = use all)
+params.genome_size = '12m'            // Change to your approximate genome size
+params.subsample = 100000             // Change to desired number of reads (0 = use all)
 ```
 
 **Parameter descriptions**:
@@ -107,26 +107,10 @@ final_results/
 └── annotation_evidence/                 # Diamond annotation results
 ```
 
-## Overriding Parameters on Command Line
-
-Instead of editing the script, you can override parameters on the command line:
-```bash
-# Use a different SRA accession
-nextflow run pipeline.nf --sra_accession SRR12345678 -profile mac
-
-# Subsample to 50,000 reads for faster testing
-nextflow run pipeline.nf --sra_accession SRR12345678 --subsample 50000 -profile mac
-
-# Use all reads (no subsampling)
-nextflow run pipeline.nf --sra_accession SRR12345678 --subsample 0 -profile mac
-
-# Specify genome size
-nextflow run pipeline.nf --sra_accession SRR12345678 --genome_size 100m -profile mac
-```
-
 ## Example Parameter Configurations
 
 ### Small Test Assembly (Fast)
+
 Edit `pipeline.nf`:
 ```nextflow
 params.sra_accession = 'SRR21031641'
@@ -153,7 +137,7 @@ params.subsample = 100000
 1. Go to [NCBI SRA](https://www.ncbi.nlm.nih.gov/sra)
 2. Search for your organism or project
 3. Find your run accession (starts with SRR, ERR, or DRR)
-4. Use that accession in your pipeline
+4. Copy that accession into `params.sra_accession` in `pipeline.nf`
 
 Example: `SRR21031641` is a baker's yeast (Saccharomyces cerevisiae) Nanopore assembly
 
@@ -190,23 +174,19 @@ COLLECT_FINAL_RESULTS (organize outputs)
 
 ## Running Multiple Assemblies
 
-### Sequential Runs
+For each new SRA accession you want to assemble:
 
-For different SRA accessions, simply run the pipeline multiple times with different parameters:
+1. Edit `pipeline.nf` and change `params.sra_accession` to your new SRA accession
+2. Run the pipeline:
 ```bash
-# First assembly
-nextflow run pipeline.nf --sra_accession SRR21031641 --subsample 50000 -profile mac
-
-# Second assembly (with -resume to avoid re-downloading shared resources)
-nextflow run pipeline.nf --sra_accession SRR12345678 --subsample 50000 -profile mac -resume
-
-# Third assembly
-nextflow run pipeline.nf --sra_accession SRR87654321 --subsample 50000 -profile mac -resume
+   nextflow run pipeline.nf -profile mac -resume
 ```
 
-Each run will overwrite the previous results in `results/`, so save important results before starting a new run.
+To avoid re-downloading shared resources (reference data, Diamond DB), use the `-resume` flag.
 
-### Resuming a Failed Assembly
+**Note**: Each run overwrites the previous results in `results/`. Save important results before starting a new assembly.
+
+## Resuming a Failed Assembly
 
 If your pipeline fails or is interrupted, resume from where it left off:
 ```bash
@@ -224,9 +204,10 @@ nextflow run pipeline.nf -profile mac -resume
 
 ### Modifying Assembly Parameters
 
-Edit `nextflow.config` or `pipeline.nf` to change default parameters:
+Edit `pipeline.nf` to change parameters:
 ```nextflow
 params {
+    sra_accession = 'SRR21031641'
     genome_size = '12m'
     subsample = 100000
     outdir = 'results'
@@ -247,29 +228,29 @@ To use different references, modify the `DOWNLOAD_S288C_*` processes in the pipe
 
 ## Troubleshooting
 
-### "Invalid SRA accession"
+### Invalid SRA Accession
 
-Make sure your SRA accession is correct. Check [NCBI SRA](https://www.ncbi.nlm.nih.gov/sra) for valid accessions.
+Make sure your SRA accession is correct and matches the format (e.g., SRR21031641, ERR123456, DRR789012). Check [NCBI SRA](https://www.ncbi.nlm.nih.gov/sra) for valid accessions.
 
-### Downloads are slow
+### Downloads are Slow
 
 Large Nanopore datasets (10GB+) may take several hours to download from SRA. Use `-resume` to continue if the download is interrupted.
 
-### Out of memory errors
+### Out of Memory Errors
 
-Reduce the number of subsampled reads:
-```bash
-nextflow run pipeline.nf --subsample 10000 -profile mac
+Reduce the number of subsampled reads by editing `pipeline.nf`:
+```nextflow
+params.subsample = 10000
 ```
 
-### Resume failed pipeline
+### Resume Failed Pipeline
 
 Use the `-resume` flag to continue from where it stopped:
 ```bash
 nextflow run pipeline.nf -profile mac -resume
 ```
 
-### Clear cache and restart
+### Clear Cache and Restart
 ```bash
 rm -rf work/
 nextflow run pipeline.nf -profile mac
@@ -313,17 +294,5 @@ If you use this pipeline, please cite the tools it depends on:
 - **BUSCO**: Simão et al. (2015) Bioinformatics
 - **QUAST**: Gurevich et al. (2013) Bioinformatics
 - **NanoPlot**: De Coster et al. (2023) Bioinformatics
-
-## License
-
-[Add your license here, e.g., MIT, GPL, etc.]
-
-## Support
-
-For issues, questions, or contributions, please open an issue on GitHub.
-
-## Authors
-
-Created for reliable, reproducible nanopore genome assembly and annotation with automated SRA data integration.
 
 EOF
