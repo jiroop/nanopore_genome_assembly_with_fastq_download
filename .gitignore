@@ -1,0 +1,63 @@
+# Nextflow
+work/
+.nextflow/
+.nextflow.log*
+.nextflow.history
+trace.*
+timeline.*
+dag.svg
+
+# Data and Results
+results/
+shared_resources/
+assemblies/*/data/
+assemblies/*/results/
+
+# Sequence files
+*.fastq
+*.fastq.gz
+*.fasta
+*.fasta.gz
+*.fa
+*.fa.gz
+*.fq
+*.fq.gz
+
+# BAM/SAM files
+*.bam
+*.bam.bai
+*.sam
+
+# GFF/GTF files (can contain sequence info)
+*.gff
+*.gff3
+*.gtf
+
+# Large database files
+*.dmnd
+*.db
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.conda/
+env/
+venv/
